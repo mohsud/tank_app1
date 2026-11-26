@@ -21,7 +21,7 @@ from kivy.uix.widget import Widget
 from kivy.utils import platform
 
 # ==============================================================================
-# 1. DISPLAY & GAME CONSTANTS 
+# 1. DISPLAY & GAME CONSTANTS
 # ==============================================================================
 
 SCREEN_WIDTH = 540
@@ -76,8 +76,8 @@ def rgb(r: int, g: int, b: int, a: float = 1.0) -> Tuple[float, float, float, fl
 
 BG_DARK = rgb(14, 24, 16)
 PANEL_BG = rgb(16, 28, 18, 0.92)
-SLOT_BG = rgb(20, 42, 22, 0.86)
-SLOT_BORDER = rgb(125, 195, 110, 0.90)
+SLOT_BG = rgb(20, 42, 22, 0.88)
+SLOT_BORDER = rgb(125, 195, 110, 0.92)
 
 WHITE = rgb(245, 250, 245)
 BLACK = rgb(8, 12, 10)
@@ -249,7 +249,6 @@ TURRET_FILE_PREFIX: Dict[str, str] = {
     "mortar": "cannon",
 }
 
-# Strictly 5 enemy sprites: tank_1.png .. tank_5.png
 TANK_FILE_NAMES: Dict[str, List[str]] = {
     "scout": ["tank_1.png", "tank_scout.png"],
     "light": ["tank_2.png", "tank_light.png"],
@@ -561,7 +560,6 @@ class WaveWarningAlert:
 
 TANK_ORDER: List[str] = ["scout", "light", "armored", "siege", "boss"]
 
-# Enemy HP reduced by 20% across all 5 tank types
 TANK_SPECS: Dict[str, Dict[str, object]] = {
     "scout": {
         "name": "SCOUT",
@@ -616,7 +614,6 @@ def is_big_boss_wave(wave_num: int) -> bool:
 
 
 def get_boss_shell_damage(wave_num: int) -> float:
-    """Starts at 20 on wave 15, +5 every 5 waves, capped at 40 on wave 35+."""
     if wave_num < 15:
         return 20.0
     capped_wave = min(wave_num, 35)
@@ -895,7 +892,6 @@ class DefenseUnit:
         return base_spl * (1.0 + 0.08 * (self.tier - 1))
 
     def get_slow_stats(self) -> Tuple[float, float]:
-        """Doubled slow effect: 50% for 2.0s at L1, 70% for 3.0s at L2+."""
         if self.unit_type != "mortar":
             return 0.0, 0.0
         if self.tier <= 1:
@@ -1033,34 +1029,37 @@ class BaseDefenseWidget(Widget):
         self.btn_pause = RectBox(18, 26, 76, 28)
         self.btn_guide = RectBox(18, 62, 76, 28)
         self.btn_skip_wave = RectBox(SCREEN_WIDTH - 102, 108, 88, 28)
-        self.btn_sell = RectBox(SCREEN_WIDTH * 0.5 - 86, SCREEN_HEIGHT * 0.52, 172, 34)
+        self.btn_sell = RectBox(SCREEN_WIDTH * 0.5 - 86, SCREEN_HEIGHT * 0.48, 172, 36)
 
         self.difficulty_rects = [RectBox(44 + i * 156, 360, 140, 48) for i in range(3)]
         self.btn_start_game = RectBox(110, 445, 320, 64)
         self.btn_title_guide = RectBox(150, 530, 240, 46)
 
-        self.btn_close_guide = RectBox(SCREEN_WIDTH * 0.5 - 105, SCREEN_HEIGHT - 82, 210, 46)
+        self.btn_close_guide = RectBox(SCREEN_WIDTH * 0.5 - 105, SCREEN_HEIGHT - 96, 210, 46)
 
+        # Dock slots slightly lifted above bottom controls
         self.dock_rects: List[RectBox] = []
         slot_w = SCREEN_WIDTH * 0.115
         slot_h = slot_w
         gap = SCREEN_WIDTH * 0.018
         total_w = DOCK_SLOTS_COUNT * slot_w + (DOCK_SLOTS_COUNT - 1) * gap
         start_x = (SCREEN_WIDTH - total_w) / 2.0
-        dock_center_y = SCREEN_HEIGHT * (1.0 - 0.095)
+        dock_center_y = SCREEN_HEIGHT - 122
         for i in range(DOCK_SLOTS_COUNT):
             sx = start_x + i * (slot_w + gap)
             sy = dock_center_y - slot_h / 2.0
             self.dock_rects.append(RectBox(sx, sy, slot_w, slot_h))
 
-        sbtn_y = SCREEN_HEIGHT - 44
+        # Lifted bottom control buttons clear of mobile navigation / gesture bar
+        sbtn_y = SCREEN_HEIGHT - 76
+        sbtn_h = 42
         self.spawn_btns: List[Tuple[str, RectBox]] = [
-            ("sniper", RectBox(10, sbtn_y, 76, 36)),
-            ("gatling", RectBox(90, sbtn_y, 66, 36)),
-            ("mortar", RectBox(160, sbtn_y, 88, 36)),
+            ("sniper", RectBox(10, sbtn_y, 78, sbtn_h)),
+            ("gatling", RectBox(92, sbtn_y, 64, sbtn_h)),
+            ("mortar", RectBox(160, sbtn_y, 88, sbtn_h)),
         ]
-        self.btn_buy_healer = RectBox(252, sbtn_y, 86, 36)
-        self.points_box = RectBox(342, sbtn_y, 188, 36)
+        self.btn_buy_healer = RectBox(252, sbtn_y, 88, sbtn_h)
+        self.points_box = RectBox(344, sbtn_y, 186, sbtn_h)
 
         self._active_touch_uid: Optional[int] = None
         self.reset_game()
@@ -1233,11 +1232,11 @@ class BaseDefenseWidget(Widget):
     def spawn_unit_to_dock(self, unit_type: str):
         cost = int(UNIT_META[unit_type]["cost"])
         if self.points < cost:
-            self.add_popup(SCREEN_WIDTH * 0.5, SCREEN_HEIGHT - 72, "NOT ENOUGH PTS!", RED)
+            self.add_popup(SCREEN_WIDTH * 0.5, SCREEN_HEIGHT - 102, "NOT ENOUGH PTS!", RED)
             return
         empty_idx = next((i for i, u in enumerate(self.dock_units) if u is None), None)
         if empty_idx is None:
-            self.add_popup(SCREEN_WIDTH * 0.5, SCREEN_HEIGHT - 72, "STORAGE FULL!", ORANGE)
+            self.add_popup(SCREEN_WIDTH * 0.5, SCREEN_HEIGHT - 102, "STORAGE FULL!", ORANGE)
             return
         self.points -= cost
         self.dock_units[empty_idx] = DefenseUnit(unit_type=unit_type, tier=1)
@@ -1495,7 +1494,6 @@ class BaseDefenseWidget(Widget):
                     surviving.append(e)
             self.enemies = surviving
 
-            # Boss fires heavy shells at active defense pads every 3.0 seconds
             boss_dmg = get_boss_shell_damage(self.wave)
             for e in self.enemies:
                 if e.kind == "boss" and e.hp > 0 and e.boss_attack_cd <= 0.0:
@@ -1518,7 +1516,6 @@ class BaseDefenseWidget(Widget):
                             )
                         )
 
-            # Resolve heavy boss shells impacting defense turrets
             remaining_shells: List[BossShellFX] = []
             for sh in self.boss_shells:
                 hit_pad = sh.update(dt)
@@ -1545,7 +1542,6 @@ class BaseDefenseWidget(Widget):
                         self.add_popup(sh.target_x, sh.target_y - 34, "TURRET DESTROYED!", RED)
             self.boss_shells = remaining_shells
 
-            # Healer heals ONE damaged turret every 3.0 seconds across the full map
             if self.healer is not None:
                 self.healer.heal_cd = max(0.0, self.healer.heal_cd - dt)
                 if self.healer.heal_cd <= 0.0:
@@ -1953,7 +1949,7 @@ class BaseDefenseWidget(Widget):
 
             for i, rect in enumerate(self.dock_rects):
                 self._draw_rect(rect.x, rect.y, rect.w, rect.h, SLOT_BG)
-                self._draw_rect_outline(rect.x, rect.y, rect.w, rect.h, SLOT_BORDER, 1.4)
+                self._draw_rect_outline(rect.x, rect.y, rect.w, rect.h, SLOT_BORDER, 1.6)
                 unit = self.dock_units[i]
                 if unit is not None:
                     self._draw_turret_visual(unit, rect.centerx, rect.centery, rect.w * 0.36, show_range=False, show_hp=False)
@@ -1987,27 +1983,37 @@ class BaseDefenseWidget(Widget):
 
             self._draw_wave_alerts()
 
+            # Redesigned & lifted bottom buttons
             for unit_type, rect in self.spawn_btns:
                 meta = UNIT_META[unit_type]
                 cost = int(meta["cost"])
-                self._draw_rect(rect.x, rect.y, rect.w, rect.h, meta["color"])  # type: ignore
-                self._draw_rect_outline(rect.x, rect.y, rect.w, rect.h, WHITE, 1.2)
-                self._draw_text(f"{meta['short']} ({cost})", rect.centerx, rect.centery, BLACK, 10)
+                can_afford = self.points >= cost
+                fill_col = meta["color"] if can_afford else rgb(48, 56, 52, 0.92)  # type: ignore
+                txt_col = BLACK if can_afford else GRAY
+                self._draw_rect(rect.x, rect.y, rect.w, rect.h, fill_col)
+                self._draw_rect_outline(rect.x, rect.y, rect.w, rect.h, WHITE if can_afford else GRAY, 1.5)
+                self._draw_text(f"{meta['short']}", rect.centerx, rect.centery - 6, txt_col, 10)
+                self._draw_text(f"{cost} PTS", rect.centerx, rect.centery + 8, txt_col, 9)
 
             hb = self.btn_buy_healer
             if self.healer is None:
-                h_label = f"HEAL ({HEALER_BUILD_COST})"
+                h_top, h_bot = "HEAL", f"{HEALER_BUILD_COST} PTS"
+                h_can = self.points >= HEALER_BUILD_COST
             else:
                 uc = self.healer.next_upgrade_cost()
-                h_label = f"H-UP ({uc})" if uc else "HEAL MAX"
-            self._draw_rect(hb.x, hb.y, hb.w, hb.h, TEAL)
-            self._draw_rect_outline(hb.x, hb.y, hb.w, hb.h, WHITE, 1.2)
-            self._draw_text(h_label, hb.centerx, hb.centery, BLACK, 10)
+                h_top = f"HEAL L{self.healer.level}"
+                h_bot = f"UP {uc} PTS" if uc else "MAX LVL"
+                h_can = (uc is None) or (self.points >= uc)
+            self._draw_rect(hb.x, hb.y, hb.w, hb.h, TEAL if h_can else rgb(36, 54, 52, 0.92))
+            self._draw_rect_outline(hb.x, hb.y, hb.w, hb.h, WHITE if h_can else GRAY, 1.5)
+            self._draw_text(h_top, hb.centerx, hb.centery - 6, BLACK if h_can else GRAY, 10)
+            self._draw_text(h_bot, hb.centerx, hb.centery + 8, BLACK if h_can else GRAY, 9)
 
             pb = self.points_box
-            self._draw_rect(pb.x, pb.y, pb.w, pb.h, rgb(25, 65, 35))
-            self._draw_rect_outline(pb.x, pb.y, pb.w, pb.h, GREEN, 1.3)
-            self._draw_text(f"PTS: {self.points:.1f}/15 (+{BASE_POINTS_REGEN_PER_SEC:.2f}/s)", pb.centerx, pb.centery, WHITE, 11)
+            self._draw_rect(pb.x, pb.y, pb.w, pb.h, rgb(18, 48, 28, 0.94))
+            self._draw_rect_outline(pb.x, pb.y, pb.w, pb.h, GREEN, 1.5)
+            self._draw_text(f"PTS: {self.points:.1f} / {int(MAX_POINTS)}", pb.centerx, pb.centery - 6, GREEN, 11)
+            self._draw_text(f"+{POINTS_REGEN_PER_SEC:.2f} / sec", pb.centerx, pb.centery + 8, WHITE, 9)
 
             if self.dragging_unit is not None:
                 refund = self.dragging_unit.get_refund_points()
@@ -2059,7 +2065,7 @@ class BaseDefenseWidget(Widget):
                 self._draw_rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, (10, 16, 12, 0.96))
                 if self.info_texture is not None:
                     img_w = SCREEN_WIDTH - 24
-                    img_h = SCREEN_HEIGHT - 120
+                    img_h = SCREEN_HEIGHT - 134
                     self._draw_texture(self.info_texture, SCREEN_WIDTH * 0.5, 20 + img_h * 0.5, img_w, img_h)
                 else:
                     self._draw_text("PUT info.png IN assets/ FOLDER", SCREEN_WIDTH * 0.5, SCREEN_HEIGHT * 0.45, YELLOW, 16)
