@@ -21,7 +21,7 @@ from kivy.uix.widget import Widget
 from kivy.utils import platform
 
 # ==============================================================================
-# 1. DISPLAY & GAME CONSTANTS
+# 1. DISPLAY & GAME CONSTANTS 
 # ==============================================================================
 
 SCREEN_WIDTH = 540
